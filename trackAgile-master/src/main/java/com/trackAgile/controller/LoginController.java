@@ -1,7 +1,6 @@
 package com.trackAgile.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -33,7 +32,7 @@ public class LoginController {
 	@Autowired
 	private LoginService loginService;
 
-	//Login 
+	// Login
 	@PostMapping("/authenticate")
 	public String authenticateAndetToken(@RequestBody AuthRequestDto authRequest) {
 		Authentication authentication = authenticationManager.authenticate(
@@ -46,36 +45,37 @@ public class LoginController {
 			throw new UsernameNotFoundException("Invalid User");
 	}
 
-	//For saving user 
+	// For saving user
 	@PostMapping("/save-user")
 	public ApiResponse saveUsers(@RequestBody UserDto usersDto) {
 		return loginService.saveUsers(usersDto);
 
 	}
-	
-	//Updating password
-	@PostMapping("/update-password")
-    public ApiResponse updatePassword(@RequestBody UserDto usersDto) {
-		return loginService.updatePassword(usersDto);
-       
-    }
-	
-	 @GetMapping("/all")
-	    public ApiResponse getAllUsers() {
-	      
-	        return  loginService.getAllUsers();
-	    }
 
-	    @GetMapping("/{id}")
-	    public ApiResponse getUserById(@PathVariable Long id) {
-	      
-	        return loginService.getUserById(id);
-	    }
-	    
-	    @GetMapping("/username/{username}")
-	    public ApiResponse getUserByName(@PathVariable String username) {
-	       
-	        return loginService.getUserByUsername(username);
-	    }
+	// Updating password
+	@PostMapping("/update-password")
+	public ApiResponse updatePassword(@RequestBody UserDto usersDto) {
+		return loginService.updatePassword(usersDto);
+
+	}
+
+	@GetMapping("/all")
+	public ApiResponse getAllUsers() {
+
+		return loginService.getAllUsers();
+	}
+
+	// not needed---need to remove
+	@GetMapping("/{id}")
+	public ApiResponse getUserById(@PathVariable Long id) {
+
+		return loginService.getUserById(id);
+	}
+
+	@GetMapping("/username/{username}")
+	public ApiResponse getUserByName(@PathVariable String username) {
+
+		return loginService.getUserByUsername(username);
+	}
 
 }

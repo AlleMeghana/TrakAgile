@@ -1,5 +1,7 @@
 package com.trackAgile.serviceImpl;
 
+import java.io.File;
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -21,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.trackAgile.Entity.Attendence;
 import com.trackAgile.Entity.Employee;
@@ -32,6 +35,7 @@ import com.trackAgile.dto.AttendenceDto;
 import com.trackAgile.dto.PatrollingResponseDto;
 import com.trackAgile.dto.PatrollingTrackDto;
 import com.trackAgile.dto.TaskDto;
+import com.trackAgile.dto.UserNameDto;
 import com.trackAgile.dto.VehicleInfoDto;
 import com.trackAgile.repository.AttendenceRepository;
 import com.trackAgile.repository.EmployeeRepository;
@@ -53,23 +57,24 @@ public class AttendenceServiceImpl implements AttendenceService {
 
 	@Autowired
 	private UserRepository userRepo;
+
+	@Autowired
+	private EmployeeRepository employeeRepository;
+
+	@Autowired
+	private TaskRepository taskRepository;
+
+	@Autowired
+	private PattrolerRepository patrollingTrackRepository;
+
+	@Autowired
+	private VehicleInfoService vehicleInfoService;
 	
-	 @Autowired
-	    private EmployeeRepository employeeRepository;
-	    
-	    @Autowired
-	    private TaskRepository taskRepository;
-	    
-	    @Autowired
-	    private PattrolerRepository patrollingTrackRepository;
-	    
-	    
-	    @Autowired
-	    private VehicleInfoService vehicleInfoService;
-	    
+	private final String FOLDER_PATH = "C:\\Users\\91756\\OneDrive\\Pictures\\meghana";
+
 
 	@Override
-	public ApiResponse markAttendence(Long id, AttendenceDto attendenceDto) {
+	public ApiResponse markAttendence(UserNameDto userNameDto, AttendenceDto attendenceDto) {
 //		Optional<User> userOpt = userRepo.findById(id);
 //		Attendence attendance = new Attendence();
 //		GeometryFactory geometryFactory = new GeometryFactory();
@@ -114,7 +119,7 @@ public class AttendenceServiceImpl implements AttendenceService {
 //		return new ApiResponse(attendance, HttpStatus.OK);
 //	}
 
-		Optional<User> userOpt = userRepo.findById(id);
+		Optional<User> userOpt = userRepo.findById(userNameDto.getId());
 		Attendence attendence = new Attendence();
 
 		if (userOpt.isPresent()) {
@@ -125,7 +130,7 @@ public class AttendenceServiceImpl implements AttendenceService {
 					.createPoint(new Coordinate(attendenceDto.getLastLocX(), attendenceDto.getLastLocY()));
 			attendence.setStatus(attendenceDto.getStatus());
 //			attendence.setLogInTime(attendenceDto.getLogInTime());
-			//attendence.setLogoutTime(attendenceDto.getLogoutTime());
+			// attendence.setLogoutTime(attendenceDto.getLogoutTime());
 
 			Point pointTrack = geometryFactory
 					.createPoint(new Coordinate(attendenceDto.getLastLocX(), attendenceDto.getLastLocY()));
@@ -151,10 +156,10 @@ public class AttendenceServiceImpl implements AttendenceService {
 		return new ApiResponse(attendence, HttpStatus.OK);
 	}
 
-	// saving the location //using  ---final
+	// saving the location //using ---final
 	@Override
-	public ApiResponse saveLocation(Long id, AttendenceDto attendenceDto) throws ParseException {
-		Optional<User> userOpt = userRepo.findById(id);
+	public ApiResponse saveLocation(UserNameDto userNameDto, AttendenceDto attendenceDto) throws ParseException {
+		Optional<User> userOpt = userRepo.findById(userNameDto.getId());
 		Attendence attendence = new Attendence();
 		if (userOpt.isPresent()) {
 			WKTReader wktReader = new WKTReader();
@@ -175,14 +180,14 @@ public class AttendenceServiceImpl implements AttendenceService {
 
 	// for updating the Locations in points
 	@Override
-	public ApiResponse updateLocation(Long id, AttendenceDto attendenceDto) {
+	public ApiResponse updateLocation(UserNameDto userNameDto, AttendenceDto attendenceDto) {
 
-		Optional<Attendence> userOpt = attenedenceRepo.findById(id);
+		Optional<Attendence> userOpt = attenedenceRepo.findById(userNameDto.getId());
 		Attendence attendence = null;
 
 		if (userOpt.isPresent()) {
 			// Check if the attendance record exists for this user
-			Optional<Attendence> attendenceOpt = attenedenceRepo.findById(id);
+			Optional<Attendence> attendenceOpt = attenedenceRepo.findById(userNameDto.getId());
 			if (attendenceOpt.isPresent()) {
 				// If it exists, update it
 				attendence = attendenceOpt.get();
@@ -244,8 +249,9 @@ public class AttendenceServiceImpl implements AttendenceService {
 		attendenceDto.setDate(attendence.getDate());
 		attendenceDto.setStatus(attendence.getStatus());
 		if (attendence.getUser() != null) {
-            attendenceDto.setUsername(attendence.getUser().getUserName()); // Assuming getUserName() returns the username
-        }
+			attendenceDto.setUsername(attendence.getUser().getUserName()); // Assuming getUserName() returns the
+																			// username
+		}
 
 		if (attendence.getLastKnownLocation() != null) {
 			attendenceDto.setLastLocX(attendence.getLastKnownLocation().getCoordinate().x);
@@ -272,16 +278,17 @@ public class AttendenceServiceImpl implements AttendenceService {
 		attendenceDto.setLogoutTime(attendence.getLogoutTime());
 		attendenceDto.setStatus(attendence.getStatus());
 		if (attendence.getUser() != null) {
-            attendenceDto.setUsername(attendence.getUser().getUserName()); // Assuming getUserName() returns the username
-        }
+			attendenceDto.setUsername(attendence.getUser().getUserName()); // Assuming getUserName() returns the
+																			// username
+		}
 		if (attendence.getLastKnownLocation() != null) {
 			attendenceDto.setLastLocX(attendence.getLastKnownLocation().getCoordinate().x);
 			attendenceDto.setLastLocY(attendence.getLastKnownLocation().getCoordinate().y);
 		}
-		
-		 if (attendence.getUser() != null) {
-	        attendenceDto.setUsername(attendence.getUser().getUserName()); 
-	    }
+
+		if (attendence.getUser() != null) {
+			attendenceDto.setUsername(attendence.getUser().getUserName());
+		}
 
 		if (attendence != null) {
 			WKTWriter writer = new WKTWriter();
@@ -305,9 +312,10 @@ public class AttendenceServiceImpl implements AttendenceService {
 				attendenceDto.setLastLocY(attendence.getLastKnownLocation().getCoordinate().y);
 			}
 // Get the associated username from the User entity
-	        if (attendence.getUser() != null) {
-	            attendenceDto.setUsername(attendence.getUser().getUserName()); // Assuming getUserName() returns the username
-	        }
+			if (attendence.getUser() != null) {
+				attendenceDto.setUsername(attendence.getUser().getUserName()); // Assuming getUserName() returns the
+																				// username
+			}
 			if (attendence != null) {
 				WKTWriter writer = new WKTWriter();
 				String pointWkt = writer.write(attendence.getPoint());
@@ -318,336 +326,325 @@ public class AttendenceServiceImpl implements AttendenceService {
 		}
 		return new ApiResponse(attendenceDtoList, HttpStatus.OK);
 	}
-	
+
 	@Transactional
 
 	@Override
-	public ResponseEntity<?> startPatrolling(PatrollingTrackDto patrollingTrackDto, Long loggedInEmployeeId) throws ParseException {
-	    try {
-	        Employee employee = employeeRepository.findById(loggedInEmployeeId)
-	                .orElseThrow(() -> new RuntimeException("Employee not found"));
+	public ResponseEntity<?> startPatrolling(PatrollingTrackDto patrollingTrackDto, MultipartFile file,
+			UserNameDto userNameDto,VehicleInfoDto vehicleInfoDto) throws ParseException {
+		try {
+			Employee employee = employeeRepository.findById(userNameDto.getId())
+					.orElseThrow(() -> new RuntimeException("Employee not found"));
 
-	        User user = employee.getUser();
-	        if (user == null) {
-	            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found for the employee.");
-	        }
+			User user = employee.getUser();
+			if (user == null) {
+				return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found for the employee.");
+			}
 
-	        String role = user.getRole();
-	        System.out.println("User Role: " + role); // Debug log
+			String role = user.getRole();
+			System.out.println("User Role: " + role); // Debug log
 
-	        if (!"ROLE_FRT".equals(role) && !"ROLE_FE".equals(role)) {
-	            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("User role does not permit patrolling.");
-	        }
+			if (!"ROLE_FRT".equals(role) && !"ROLE_FE".equals(role)) {
+				return ResponseEntity.status(HttpStatus.FORBIDDEN).body("User role does not permit patrolling.");
+			}
 
-	        List<VehicleInfoDto> vehicleInfoList = vehicleInfoService.getVehicleInfoByEmpId(loggedInEmployeeId);
+			List<VehicleInfoDto> vehicleInfoList = vehicleInfoService.getVehicleInfoByEmpId(userNameDto,vehicleInfoDto);
+			// Create and save Attendance record
+			Attendence attendence = new Attendence();
+			WKTReader wktReader = new WKTReader();
+			Geometry geometry = wktReader
+					.read("POINT(" + patrollingTrackDto.getLastLocX() + " " + patrollingTrackDto.getLastLocY() + ")");
+			attendence.setPoint(geometry);
+			attendence.setLastKnownLocation(geometry);
+			attendence.setDate(patrollingTrackDto.getDate());
+			attendence.setStatus("Active");
+			attendence.setUser(user);
+			attendence.setLogInTime(LocalTime.now());
 
-	        // Create and save Attendance record
-	        Attendence attendence = new Attendence();
-	        WKTReader wktReader = new WKTReader();
-	        Geometry geometry = wktReader.read("POINT(" + patrollingTrackDto.getLastLocX() + " " + patrollingTrackDto.getLastLocY() + ")");
-	        attendence.setPoint(geometry);
-	        attendence.setLastKnownLocation(geometry);
-	        attendence.setDate(patrollingTrackDto.getDate());
-	        attendence.setStatus("Active");
-	        attendence.setUser(user);
-	        attendence.setLogInTime(LocalTime.now());
+			attenedenceRepo.save(attendence);
+			System.out.println("Attendance saved: " + attendence); // Debug log
 
-	        attenedenceRepo.save(attendence);
-	        System.out.println("Attendance saved: " + attendence); // Debug log
+			employee.setIsAttendenceMarked(true);
+			employeeRepository.save(employee);
 
-	        employee.setIsAttendenceMarked(true);
-	        employeeRepository.save(employee);
+			PatrollingTrack patrollingTrack = new PatrollingTrack();
+			patrollingTrack.setDate(patrollingTrackDto.getDate());
+			patrollingTrack.setEmpName(employee.getEmpName());
+			patrollingTrack.setOdometerStartReading(patrollingTrackDto.getOdometerStartReading());
+//			patrollingTrack.setStartReadingPhotoUrl(patrollingTrackDto.getStartReadingPhotoUrl());
+			String startOdoMeterPic = uploadImageToFileSystem(file);
+			patrollingTrack.setStartReadingPhotoUrl(startOdoMeterPic);
+			patrollingTrack.setStartTime(patrollingTrackDto.getStartTime());
 
-	        PatrollingTrack patrollingTrack = new PatrollingTrack();
-	        patrollingTrack.setDate(patrollingTrackDto.getDate());
-	        patrollingTrack.setEmpName(employee.getEmpName());
-	        patrollingTrack.setOdometerStartReading(patrollingTrackDto.getOdometerStartReading());
-	        patrollingTrack.setStartReadingPhotoUrl(patrollingTrackDto.getStartReadingPhotoUrl());
-	        patrollingTrack.setStartTime(patrollingTrackDto.getStartTime());
+			// Set point and location using WKTReader
+			Geometry trackGeometry = wktReader
+					.read("POINT(" + patrollingTrackDto.getLastLocX() + " " + patrollingTrackDto.getLastLocY() + ")");
+			patrollingTrack.setPoint(trackGeometry);
+			patrollingTrack.setLastKnownLocation(trackGeometry);
+			patrollingTrack.setEmployee(employee);
 
-	        // Set point and location using WKTReader
-	        Geometry trackGeometry = wktReader.read("POINT(" + patrollingTrackDto.getLastLocX() + " " + patrollingTrackDto.getLastLocY() + ")");
-	        patrollingTrack.setPoint(trackGeometry);
-	        patrollingTrack.setLastKnownLocation(trackGeometry);
-	        patrollingTrack.setEmployee(employee);
+			patrollingTrackRepository.save(patrollingTrack);
 
-	        patrollingTrackRepository.save(patrollingTrack);
+			TaskDto taskDto = null;
 
-	        TaskDto taskDto = null;
+			// Only create a task for the FE role if no previous tasks are pending
+			if ("ROLE_FE".equals(role)) {
+				List<Task> pendingTasks = taskRepository.findByEmployeeIdAndStatus(userNameDto.getId(), "Active");
+				if (pendingTasks.isEmpty()) { // No pending tasks
+					Task task = new Task();
+					task.setTitle("Patrolling – " + employee.getEmpName());
+					task.setDescription("Nothing here");
+					task.setAssignedTo(employee.getEmpName());
+					task.setAssignedBy(employee.getEmpName());
+					task.setCreatedBy("System - " + employee.getEmpName());
+					task.setCreatedTime(LocalTime.now());
+					task.setCreatedDate(LocalDate.now());
+					task.setWorkStartTime(LocalTime.now());
 
-	        // Only create a task for the FE role if no previous tasks are pending
-	        if ("ROLE_FE".equals(role)) {
-	            List<Task> pendingTasks = taskRepository.findByEmployeeIdAndStatus(loggedInEmployeeId, "Active");
-	            if (pendingTasks.isEmpty()) { // No pending tasks
-	                Task task = new Task();
-	                task.setTitle("Patrolling – " + employee.getEmpName());
-	                task.setDescription("Nothing here");
-	                task.setAssignedTo(employee.getEmpName());
-	                task.setAssignedBy(employee.getEmpName());
-	                task.setCreatedBy("System - " + employee.getEmpName());
-	                task.setCreatedTime(LocalTime.now());
-	                task.setCreatedDate(LocalDate.now());
-	                task.setWorkStartTime(LocalTime.now());
+					task.setStatus("Active");
+					task.setLocation(employee.getWorkLocation());
+					task.setLoc_coordinates(patrollingTrackDto.getPointWkt());
+					task.setEmployee(employee);
+					taskRepository.save(task);
 
-	                task.setStatus("Active");
-	                task.setLocation(employee.getWorkLocation());
-	                task.setLoc_coordinates(patrollingTrackDto.getPointWkt());
-	                task.setEmployee(employee);
-	                taskRepository.save(task);
+					System.out.println("Task Created: " + task);
 
-	                System.out.println("Task Created: " + task);
+					taskDto = new TaskDto();
+					taskDto.setTitle(task.getTitle());
+					taskDto.setAssignedTo(task.getAssignedTo());
+					taskDto.setAssignedBy(task.getAssignedBy());
+					taskDto.setCreatedBy(task.getCreatedBy());
+					taskDto.setCreatedTime(task.getCreatedTime());
+					taskDto.setCreatedDate(task.getCreatedDate());
+					taskDto.setWorkStartTime(task.getWorkStartTime());
+					taskDto.setWorkEndTime(task.getWorkEndTime());
+					taskDto.setStatus(task.getStatus());
+					taskDto.setLocation(task.getLocation());
+					taskDto.setLoc_coordinates(task.getLoc_coordinates());
+				} else {
+					return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Pending tasks exist for this employee.");
+				}
+			}
 
-	                taskDto = new TaskDto();
-	                taskDto.setTitle(task.getTitle());
-	                taskDto.setAssignedTo(task.getAssignedTo());
-	                taskDto.setAssignedBy(task.getAssignedBy());
-	                taskDto.setCreatedBy(task.getCreatedBy());
-	                taskDto.setCreatedTime(task.getCreatedTime());
-	                taskDto.setCreatedDate(task.getCreatedDate());
-	                taskDto.setWorkStartTime(task.getWorkStartTime());
-	                taskDto.setWorkEndTime(task.getWorkEndTime());
-	                taskDto.setStatus(task.getStatus());
-	                taskDto.setLocation(task.getLocation());
-	                taskDto.setLoc_coordinates(task.getLoc_coordinates());
-	            } else {
-	                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Pending tasks exist for this employee.");
-	            }
-	        }
+			AttendenceDto attendanceDto = new AttendenceDto();
+			attendanceDto.setDate(attendence.getDate());
+			attendanceDto.setLogInTime(attendence.getLogInTime());
+			attendanceDto.setLogoutTime(attendence.getLogoutTime());
+			attendanceDto.setStatus(attendence.getStatus());
+			attendanceDto.setLastLocX(attendence.getPoint().getCoordinate().x);
+			attendanceDto.setLastLocY(attendence.getPoint().getCoordinate().y);
 
-	        AttendenceDto attendanceDto = new AttendenceDto();
-	        attendanceDto.setDate(attendence.getDate());
-	        attendanceDto.setLogInTime(attendence.getLogInTime());
-	        attendanceDto.setLogoutTime(attendence.getLogoutTime());
-	        attendanceDto.setStatus(attendence.getStatus());
-	        attendanceDto.setLastLocX(attendence.getPoint().getCoordinate().x);
-	        attendanceDto.setLastLocY(attendence.getPoint().getCoordinate().y);
+			PatrollingResponseDto responseDto = new PatrollingResponseDto();
+			responseDto.setVehicleInfoList(vehicleInfoList);
+			responseDto.setAttendence(attendanceDto);
+			responseDto.setPatrollingTrack(patrollingTrackDto);
+			responseDto.setTask(taskDto);
 
-	        PatrollingResponseDto responseDto = new PatrollingResponseDto();
-	        responseDto.setVehicleInfoList(vehicleInfoList);
-	        responseDto.setAttendence(attendanceDto);
-	        responseDto.setPatrollingTrack(patrollingTrackDto);
-	        responseDto.setTask(taskDto);
+			return ResponseEntity.ok(responseDto);
 
-	        return ResponseEntity.ok(responseDto);
-
-	    } catch (RuntimeException e) {
-	        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-	    } catch (Exception e) {
-	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while starting patrolling.");
-	    }
+		} catch (RuntimeException e) {
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+		} catch (Exception e) {
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+					.body("An error occurred while starting patrolling.");
+		}
 	}
-
-
 
 	@Override
-	public ResponseEntity<PatrollingResponseDto> markOutAttendance(Long loggedInEmployeeId, PatrollingTrackDto patrollingTrackDto) throws ParseException {
-	    try {
-	       
-	        Employee employee = employeeRepository.findById(loggedInEmployeeId)
-	                .orElseThrow(() -> new RuntimeException("Employee not found"));
+	public ResponseEntity<PatrollingResponseDto> markOutAttendance(UserNameDto userNameDto,MultipartFile file,
+			PatrollingTrackDto patrollingTrackDto) throws ParseException {
+		try {
 
-	       
-	        User user = employee.getUser();
-	        if (user == null) {
-	            throw new RuntimeException("User not found for the employee.");
-	        }
+			Employee employee = employeeRepository.findById(userNameDto.getId())
+					.orElseThrow(() -> new RuntimeException("Employee not found"));
 
-	       
-	        Attendence attendance = attenedenceRepo.findByUserIdAndDate(user.getId(), LocalDate.now())
-	                .orElseThrow(() -> new RuntimeException("No active attendance record found for today"));
+			User user = employee.getUser();
+			if (user == null) {
+				throw new RuntimeException("User not found for the employee.");
+			}
 
-	      
-	        attendance.setLogoutTime(LocalTime.now());
-	        attendance.setLastKnownTime(LocalDateTime.now());
+			Attendence attendance = attenedenceRepo.findByUserIdAndDate(user.getId(), LocalDate.now())
+					.orElseThrow(() -> new RuntimeException("No active attendance record found for today"));
 
-	        // Set the last known location
-	        WKTReader wktReader = new WKTReader();
-	        Geometry lastKnownLocation = wktReader
-	                .read("POINT(" + patrollingTrackDto.getLastLocX() + " " + patrollingTrackDto.getLastLocY() + ")");
-	        attendance.setLastKnownLocation(lastKnownLocation);
+			attendance.setLogoutTime(LocalTime.now());
+			attendance.setLastKnownTime(LocalDateTime.now());
 
-	        
-	        attenedenceRepo.save(attendance);
+			// Set the last known location
+			WKTReader wktReader = new WKTReader();
+			Geometry lastKnownLocation = wktReader
+					.read("POINT(" + patrollingTrackDto.getLastLocX() + " " + patrollingTrackDto.getLastLocY() + ")");
+			attendance.setLastKnownLocation(lastKnownLocation);
 
-	        // Debug: Check if the attendance was saved
-	        logger.debug("Updated Attendance: " + attendance);
+			attenedenceRepo.save(attendance);
 
-	       
-	        PatrollingTrack patrollingTrack = patrollingTrackRepository
-	                .findByEmployee_IdAndDate(loggedInEmployeeId, LocalDate.now())
-	                .orElseThrow(() -> new RuntimeException("No active patrolling record found for today"));
+			// Debug: Check if the attendance was saved
+			logger.debug("Updated Attendance: " + attendance);
 
-	        // Debug: Check if the patrollingTrack was found
-	        logger.debug("Patrolling Track: " + patrollingTrack);
+			PatrollingTrack patrollingTrack = patrollingTrackRepository
+					.findByEmployee_IdAndDate(userNameDto.getId(), LocalDate.now())
+					.orElseThrow(() -> new RuntimeException("No active patrolling record found for today"));
 
-	       
-	        double travelledDistance = patrollingTrackDto.getOdometerEndReading() - patrollingTrack.getOdometerStartReading();
-	        patrollingTrack.setTravelledDistance(travelledDistance);
+			// Debug: Check if the patrollingTrack was found
+			logger.debug("Patrolling Track: " + patrollingTrack);
 
-	        
-	        patrollingTrack.setOdometerEndReading(patrollingTrackDto.getOdometerEndReading());
-	        patrollingTrack.setEndReadingPhotoUrl(patrollingTrackDto.getEndReadingPhotoUrl());
-	        patrollingTrack.setEndTime(patrollingTrackDto.getEndTime());
-	        patrollingTrack.setEndDate(LocalDate.now()); 
+			double travelledDistance = patrollingTrackDto.getOdometerEndReading()
+					- patrollingTrack.getOdometerStartReading();
+			patrollingTrack.setTravelledDistance(travelledDistance);
 
-	       
-	        patrollingTrackRepository.save(patrollingTrack);
+			patrollingTrack.setOdometerEndReading(patrollingTrackDto.getOdometerEndReading());
+			String endOdometerPic = uploadImageToFileSystem(file);
+			patrollingTrack.setEndReadingPhotoUrl(endOdometerPic);
+			patrollingTrack.setEndTime(patrollingTrackDto.getEndTime());
+			patrollingTrack.setEndDate(LocalDate.now());
 
-	        
-	        employee.setIsAttendenceMarked(false);
-	        employeeRepository.save(employee);
-	        
-	        List<Task> tasks = taskRepository.findByEmployeeIdAndCreatedDate(loggedInEmployeeId, LocalDate.now());
-	        if (tasks.isEmpty()) {
-	            throw new RuntimeException("No active task found for the employee");
-	        }
-	        Task task = tasks.get(0);
+			patrollingTrackRepository.save(patrollingTrack);
 
-	        task.setWorkEndTime(attendance.getLogoutTime());
-	        taskRepository.save(task);
+			employee.setIsAttendenceMarked(false);
+			employeeRepository.save(employee);
 
+			List<Task> tasks = taskRepository.findByEmployeeIdAndCreatedDate(userNameDto.getId(), LocalDate.now());
+			if (tasks.isEmpty()) {
+				throw new RuntimeException("No active task found for the employee");
+			}
+			Task task = tasks.get(0);
 
-	        
-	        AttendenceDto attendenceDto = new AttendenceDto();
-	        attendenceDto.setDate(attendance.getDate());
-	        attendenceDto.setStatus(attendance.getStatus());
-	        attendenceDto.setLastLocX(patrollingTrackDto.getLastLocX());
-	        attendenceDto.setLastLocY(patrollingTrackDto.getLastLocY());
-	        attendenceDto.setLogoutTime(attendance.getLogoutTime());
-	        
-	        
+			task.setWorkEndTime(attendance.getLogoutTime());
+			taskRepository.save(task);
 
-	        PatrollingTrackDto patrollingTrackResponseDto = new PatrollingTrackDto();
-	        patrollingTrackResponseDto.setOdometerEndReading(patrollingTrack.getOdometerEndReading());
-	        patrollingTrackResponseDto.setEndReadingPhotoUrl(patrollingTrack.getEndReadingPhotoUrl());
-	        patrollingTrackResponseDto.setEndTime(patrollingTrack.getEndTime());
-	        patrollingTrackResponseDto.setEndDate(patrollingTrack.getEndDate());
-	        patrollingTrackResponseDto.setTravalledDistance(travelledDistance);  // Include the calculated travelled distance
+			AttendenceDto attendenceDto = new AttendenceDto();
+			attendenceDto.setDate(attendance.getDate());
+			attendenceDto.setStatus(attendance.getStatus());
+			attendenceDto.setLastLocX(patrollingTrackDto.getLastLocX());
+			attendenceDto.setLastLocY(patrollingTrackDto.getLastLocY());
+			attendenceDto.setLogoutTime(attendance.getLogoutTime());
 
-	        
-	        PatrollingResponseDto responseDto = new PatrollingResponseDto();
-	        responseDto.setAttendence(attendenceDto);
-	        responseDto.setPatrollingTrack(patrollingTrackResponseDto);
+			PatrollingTrackDto patrollingTrackResponseDto = new PatrollingTrackDto();
+			patrollingTrackResponseDto.setOdometerEndReading(patrollingTrack.getOdometerEndReading());
+			patrollingTrackResponseDto.setEndReadingPhotoUrl(patrollingTrack.getEndReadingPhotoUrl());
+			patrollingTrackResponseDto.setEndTime(patrollingTrack.getEndTime());
+			patrollingTrackResponseDto.setEndDate(patrollingTrack.getEndDate());
+			patrollingTrackResponseDto.setTravalledDistance(travelledDistance); // Include the calculated travelled
+																				// distance
 
-	        
-	        return ResponseEntity.ok(responseDto);
+			PatrollingResponseDto responseDto = new PatrollingResponseDto();
+			responseDto.setAttendence(attendenceDto);
+			responseDto.setPatrollingTrack(patrollingTrackResponseDto);
 
-	    } catch (Exception e) {
-	       
-	        logger.error("Error in markOutAttendance method: ", e);
-	        
-	        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-	                             .body(new PatrollingResponseDto()); 
-	    }
+			return ResponseEntity.ok(responseDto);
+
+		} catch (Exception e) {
+
+			logger.error("Error in markOutAttendance method: ", e);
+
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new PatrollingResponseDto());
+		}
 	}
 
-	
-	
-	
 	@Override
 	public ApiResponse updatePatrollerLocation(Long employeeId, PatrollingTrackDto patrollingTrackDto) {
-	    try {
-	        // Fetch the employee details
-	        Optional<Employee> employeeOpt = employeeRepository.findById(employeeId);
-	        if (!employeeOpt.isPresent()) {
-	            throw new RuntimeException("Employee not found");
-	        }
-	        Employee employee = employeeOpt.get();
-	        
-	        // Fetch the associated user from the employee
-	        User user = employee.getUser();
-	        Long userId = user.getId(); // This is the userId stored in the Attendence record
-	        
-	        // Fetch the attendance record for the current day using userId
-	        Optional<Attendence> attendanceOpt = attenedenceRepo.findByUserIdAndDate(userId, LocalDate.now());
-	        if (!attendanceOpt.isPresent()) {
-	            return new ApiResponse("Attendance record not found", HttpStatus.NOT_FOUND);
-	        }
-	        Attendence attendance = attendanceOpt.get();
+		try {
+			// Fetch the employee details
+			Optional<Employee> employeeOpt = employeeRepository.findById(employeeId);
+			if (!employeeOpt.isPresent()) {
+				throw new RuntimeException("Employee not found");
+			}
+			Employee employee = employeeOpt.get();
 
-	        // Fetch the patrolling track for the employee and current day
-	        Optional<PatrollingTrack> patrollingTrackOpt = patrollingTrackRepository.findByEmployee_IdAndDate(employeeId, LocalDate.now());
-	        if (!patrollingTrackOpt.isPresent()) {
-	            return new ApiResponse("Patrolling track record not found", HttpStatus.NOT_FOUND);
-	        }
-	        PatrollingTrack patrollingTrack = patrollingTrackOpt.get();
+			// Fetch the associated user from the employee
+			User user = employee.getUser();
+			Long userId = user.getId(); // This is the userId stored in the Attendence record
 
-	        // Create a new point for the updated location
-	        GeometryFactory geometryFactory = new GeometryFactory();
-	        Point newPoint = geometryFactory.createPoint(new Coordinate(patrollingTrackDto.getLastLocX(), patrollingTrackDto.getLastLocY()));
+			// Fetch the attendance record for the current day using userId
+			Optional<Attendence> attendanceOpt = attenedenceRepo.findByUserIdAndDate(userId, LocalDate.now());
+			if (!attendanceOpt.isPresent()) {
+				return new ApiResponse("Attendance record not found", HttpStatus.NOT_FOUND);
+			}
+			Attendence attendance = attendanceOpt.get();
 
-	        // Update the Attendence entity with the new location
-	        Geometry existingAttendanceGeometry = attendance.getPoint();
-	        if (existingAttendanceGeometry instanceof Point) {
-	            // If the existing geometry is a point, add the new point to create a MultiPoint
-	            Point[] points = new Point[] { (Point) existingAttendanceGeometry, newPoint };
-	            MultiPoint multiPoint = geometryFactory.createMultiPoint(points);
-	            attendance.setPoint(multiPoint);
-	        } else if (existingAttendanceGeometry instanceof MultiPoint) {
-	            // If the existing geometry is a MultiPoint, append the new point
-	            MultiPoint multiPoint = (MultiPoint) existingAttendanceGeometry;
-	            Coordinate[] newCoordinates = new Coordinate[multiPoint.getNumGeometries() + 1];
-	            for (int i = 0; i < multiPoint.getNumGeometries(); i++) {
-	                newCoordinates[i] = multiPoint.getGeometryN(i).getCoordinate();
-	            }
-	            newCoordinates[newCoordinates.length - 1] = newPoint.getCoordinate();
-	            attendance.setPoint(geometryFactory.createMultiPointFromCoords(newCoordinates));
-	        }
+			// Fetch the patrolling track for the employee and current day
+			Optional<PatrollingTrack> patrollingTrackOpt = patrollingTrackRepository
+					.findByEmployee_IdAndDate(employeeId, LocalDate.now());
+			if (!patrollingTrackOpt.isPresent()) {
+				return new ApiResponse("Patrolling track record not found", HttpStatus.NOT_FOUND);
+			}
+			PatrollingTrack patrollingTrack = patrollingTrackOpt.get();
 
-	        // Update attendance with last known location and other details
-	        attendance.setLastKnownLocation(newPoint);
-	        attendance.setLastKnownTime(LocalDateTime.now());
+			// Create a new point for the updated location
+			GeometryFactory geometryFactory = new GeometryFactory();
+			Point newPoint = geometryFactory
+					.createPoint(new Coordinate(patrollingTrackDto.getLastLocX(), patrollingTrackDto.getLastLocY()));
 
-	        // Save the updated attendance record
-	        attenedenceRepo.save(attendance);
+			// Update the Attendence entity with the new location
+			Geometry existingAttendanceGeometry = attendance.getPoint();
+			if (existingAttendanceGeometry instanceof Point) {
+				// If the existing geometry is a point, add the new point to create a MultiPoint
+				Point[] points = new Point[] { (Point) existingAttendanceGeometry, newPoint };
+				MultiPoint multiPoint = geometryFactory.createMultiPoint(points);
+				attendance.setPoint(multiPoint);
+			} else if (existingAttendanceGeometry instanceof MultiPoint) {
+				// If the existing geometry is a MultiPoint, append the new point
+				MultiPoint multiPoint = (MultiPoint) existingAttendanceGeometry;
+				Coordinate[] newCoordinates = new Coordinate[multiPoint.getNumGeometries() + 1];
+				for (int i = 0; i < multiPoint.getNumGeometries(); i++) {
+					newCoordinates[i] = multiPoint.getGeometryN(i).getCoordinate();
+				}
+				newCoordinates[newCoordinates.length - 1] = newPoint.getCoordinate();
+				attendance.setPoint(geometryFactory.createMultiPointFromCoords(newCoordinates));
+			}
 
-	        // Update the PatrollingTrack entity with the new location
-	        Geometry existingPatrollingGeometry = patrollingTrack.getPoint();
-	        if (existingPatrollingGeometry instanceof Point) {
-	            // If the existing geometry is a point, add the new point to create a MultiPoint
-	            Point[] points = new Point[] { (Point) existingPatrollingGeometry, newPoint };
-	            MultiPoint multiPoint = geometryFactory.createMultiPoint(points);
-	            patrollingTrack.setPoint(multiPoint);
-	        } else if (existingPatrollingGeometry instanceof MultiPoint) {
-	            // If the existing geometry is a MultiPoint, append the new point
-	            MultiPoint multiPoint = (MultiPoint) existingPatrollingGeometry;
-	            Coordinate[] newCoordinates = new Coordinate[multiPoint.getNumGeometries() + 1];
-	            for (int i = 0; i < multiPoint.getNumGeometries(); i++) {
-	                newCoordinates[i] = multiPoint.getGeometryN(i).getCoordinate();
-	            }
-	            newCoordinates[newCoordinates.length - 1] = newPoint.getCoordinate();
-	            patrollingTrack.setPoint(geometryFactory.createMultiPointFromCoords(newCoordinates));
-	        }
+			// Update attendance with last known location and other details
+			attendance.setLastKnownLocation(newPoint);
+			attendance.setLastKnownTime(LocalDateTime.now());
 
-	        // Save the updated PatrollingTrack record
-	        patrollingTrackRepository.save(patrollingTrack);
+			// Save the updated attendance record
+			attenedenceRepo.save(attendance);
 
-	        // Prepare response DTOs
-	        AttendenceDto attendenceDto = new AttendenceDto();
-	        attendenceDto.setDate(attendance.getDate());
-	        attendenceDto.setStatus(attendance.getStatus());
-	        attendenceDto.setLastLocX(patrollingTrackDto.getLastLocX());
-	        attendenceDto.setLastLocY(patrollingTrackDto.getLastLocY());
+			// Update the PatrollingTrack entity with the new location
+			Geometry existingPatrollingGeometry = patrollingTrack.getPoint();
+			if (existingPatrollingGeometry instanceof Point) {
+				// If the existing geometry is a point, add the new point to create a MultiPoint
+				Point[] points = new Point[] { (Point) existingPatrollingGeometry, newPoint };
+				MultiPoint multiPoint = geometryFactory.createMultiPoint(points);
+				patrollingTrack.setPoint(multiPoint);
+			} else if (existingPatrollingGeometry instanceof MultiPoint) {
+				// If the existing geometry is a MultiPoint, append the new point
+				MultiPoint multiPoint = (MultiPoint) existingPatrollingGeometry;
+				Coordinate[] newCoordinates = new Coordinate[multiPoint.getNumGeometries() + 1];
+				for (int i = 0; i < multiPoint.getNumGeometries(); i++) {
+					newCoordinates[i] = multiPoint.getGeometryN(i).getCoordinate();
+				}
+				newCoordinates[newCoordinates.length - 1] = newPoint.getCoordinate();
+				patrollingTrack.setPoint(geometryFactory.createMultiPointFromCoords(newCoordinates));
+			}
 
-	        PatrollingTrackDto patrollingTrackResponseDto = new PatrollingTrackDto();
-	        patrollingTrackResponseDto.setOdometerStartReading(patrollingTrack.getOdometerStartReading());
-	        patrollingTrackResponseDto.setLastLocX(patrollingTrackDto.getLastLocX());
-	        patrollingTrackResponseDto.setLastLocY(patrollingTrackDto.getLastLocY());
+			// Save the updated PatrollingTrack record
+			patrollingTrackRepository.save(patrollingTrack);
 
-	        // Create response DTO
-	        PatrollingResponseDto responseDto = new PatrollingResponseDto();
-	        responseDto.setAttendence(attendenceDto);
-	        responseDto.setPatrollingTrack(patrollingTrackResponseDto);
+			// Prepare response DTOs
+			AttendenceDto attendenceDto = new AttendenceDto();
+			attendenceDto.setDate(attendance.getDate());
+			attendenceDto.setStatus(attendance.getStatus());
+			attendenceDto.setLastLocX(patrollingTrackDto.getLastLocX());
+			attendenceDto.setLastLocY(patrollingTrackDto.getLastLocY());
 
-	        return new ApiResponse(responseDto, HttpStatus.OK);
+			PatrollingTrackDto patrollingTrackResponseDto = new PatrollingTrackDto();
+			patrollingTrackResponseDto.setOdometerStartReading(patrollingTrack.getOdometerStartReading());
+			patrollingTrackResponseDto.setLastLocX(patrollingTrackDto.getLastLocX());
+			patrollingTrackResponseDto.setLastLocY(patrollingTrackDto.getLastLocY());
 
-	    } catch (Exception e) {
-	        logger.error("Error updating patroller location: ", e);
-	        return new ApiResponse("Error updating patroller location", HttpStatus.INTERNAL_SERVER_ERROR);
-	    }
+			// Create response DTO
+			PatrollingResponseDto responseDto = new PatrollingResponseDto();
+			responseDto.setAttendence(attendenceDto);
+			responseDto.setPatrollingTrack(patrollingTrackResponseDto);
+
+			return new ApiResponse(responseDto, HttpStatus.OK);
+
+		} catch (Exception e) {
+			logger.error("Error updating patroller location: ", e);
+			return new ApiResponse("Error updating patroller location", HttpStatus.INTERNAL_SERVER_ERROR);
+		}
 	}
-	
-	
+
 	@Override
 	public ApiResponse getPattrolerInfo(Long id) {
 		Optional<Attendence> attendenceOpt = attenedenceRepo.findById(id);
@@ -660,46 +657,55 @@ public class AttendenceServiceImpl implements AttendenceService {
 		attendenceDto.setLogoutTime(attendence.getLogoutTime());
 		attendenceDto.setStatus(attendence.getStatus());
 		if (attendence.getUser() != null) {
-            attendenceDto.setUsername(attendence.getUser().getUserName()); // Assuming getUserName() returns the username
-        }
-		
-	        
-	        Employee employee = attendence.getUser().getEmployee();
-	        if (employee != null) {
-	            Long employeeId = employee.getId();
+			attendenceDto.setUsername(attendence.getUser().getUserName()); // Assuming getUserName() returns the
+																			// username
+		}
 
-	            // Retrieve PatrollingTrack using employeeId
-	            List<PatrollingTrack> patrollingTracks = patrollingTrackRepository.findByEmployeeId(employeeId);
-	            
-	            if (!patrollingTracks.isEmpty()) {
-	                PatrollingTrack patrollingTrack = patrollingTracks.get(0);  
-	                attendenceDto.setStartTime(patrollingTrack.getStartTime());  
-	                attendenceDto.setEndTime(patrollingTrack.getEndTime());     
-	            }
-	        }
-	    
+		Employee employee = attendence.getUser().getEmployee();
+		if (employee != null) {
+			Long employeeId = employee.getId();
+
+			// Retrieve PatrollingTrack using employeeId
+			List<PatrollingTrack> patrollingTracks = patrollingTrackRepository.findByEmployeeId(employeeId);
+
+			if (!patrollingTracks.isEmpty()) {
+				PatrollingTrack patrollingTrack = patrollingTracks.get(0);
+				attendenceDto.setStartTime(patrollingTrack.getStartTime());
+				attendenceDto.setEndTime(patrollingTrack.getEndTime());
+			}
+		}
+
 		if (attendence.getLastKnownLocation() != null) {
 			attendenceDto.setLastLocX(attendence.getLastKnownLocation().getCoordinate().x);
 			attendenceDto.setLastLocY(attendence.getLastKnownLocation().getCoordinate().y);
 		}
-		
-		 if (attendence.getUser() != null) {
-	        attendenceDto.setUsername(attendence.getUser().getUserName()); 
-	    }
+
+		if (attendence.getUser() != null) {
+			attendenceDto.setUsername(attendence.getUser().getUserName());
+		}
 
 		if (attendence != null) {
 			WKTWriter writer = new WKTWriter();
 			String pointWkt = writer.write(attendence.getPoint());
 			attendenceDto.setPointWkt(pointWkt);
 		}
-		
-		
+
 		return new ApiResponse(attendenceDto, HttpStatus.OK);
 	}
+	
+	public String uploadImageToFileSystem(MultipartFile file) throws IOException {
+		String filePath = FOLDER_PATH + file.getOriginalFilename();
+		// Transfer file to the desired location
+		file.transferTo(new File(filePath));
+		// Save the file metadata to the database
+//		BatteryInfo fileData = siteInfoRepo.save(BatteryInfo.builder().photo(filePath).build());
 
-	
-	
-	
+		// Return success message if file data is saved successfully
+//		if (fileData != null) {
+//			return "File uploaded successfully: " + filePath;
+//		}
 
+		return "uploaded successfully" + filePath;
+	}
 
 }

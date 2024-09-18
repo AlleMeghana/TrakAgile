@@ -52,18 +52,19 @@ public class SecurityConfig {
 		return http.csrf().disable().authorizeHttpRequests()
 				.requestMatchers("/login/save-user", "/login/authenticate", "/leave/apply/{id}", "employee/save",
 						"/employee/create", "/leave/location", "/attendence/mark/{id}", "/employee/get",
-						"/attendence/get-attendence", "/attendence/loc/{id}", "/attendence/update/{id}",
+						"/attendence/get-attendence", "/attendence/loc", "/attendence/update",
 						"/attendence/point-update/{id}", "/attendence/get/{id}", "/attendence/get-all-locations",
 						"/attendence/multipoint/{id}", "/leave/calculate/{id}", "/attendence/all-loc",
 						"/site/info-save", "/site/get", "/site/upload-excel", "/login/update-password",
-						"/employee/getById/{id}","/dashboard/summary","/dashboard/summary/{date}","/login/all","/login/{id}",
-						"/login/username/{username}","/attendence/start/{loggedInEmployeeId}","/attendence/mark-out/{loggedInEmployeeId}"
-						,"/employee/getByUserName/{userName}","/attendence/update-location/{employeeId}","/dashboard/fe/{empId}",
-						"/attendence/patroler/{id}","/task/update/{empId}","/api/countries","/api/{country}/states"
-						,"/api/{country}/states/{state}/pkgs","/api/{country}/states/{state}/pkg/{pkg}/districts",
+						"/employee/getById/{id}", "/dashboard/summary", "/dashboard/summary/{date}", "/login/all",
+						"/login/{id}", "/login/username/{username}", "/attendence/start", "/attendence/mark-out",
+						"/employee/getByUserName/{userName}", "/attendence/update-location/{employeeId}",
+						"/dashboard/fe/{empId}", "/attendence/patroler/{id}", "/task/update/{empId}", "/api/countries",
+						"/api/{country}/states", "/api/{country}/states/{state}/pkgs",
+						"/api/{country}/states/{state}/pkg/{pkg}/districts",
 						"/api/{country}/states/{state}/pkg/{pkg}/districts/{district}/mandals",
-						"/api/{country}/states/{state}/pkg/{pkg}/districts/{district}/mandals/{mandal}/villages"
-						,"/task/taskInfo/{empId}")
+						"/api/{country}/states/{state}/pkg/{pkg}/districts/{district}/mandals/{mandal}/villages",
+						"/task/taskInfo/{empId}")
 				.permitAll().and().authorizeHttpRequests().requestMatchers("/").authenticated().and()
 				.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
 				.authenticationProvider(authenticationProvider())

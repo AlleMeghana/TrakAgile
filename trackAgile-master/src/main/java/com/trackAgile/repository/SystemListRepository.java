@@ -1,5 +1,11 @@
 package com.trackAgile.repository;
 
-public interface SystemListRepository {
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
+import com.trackAgile.Entity.SystemList;
+
+@Repository
+public interface SystemListRepository extends JpaRepository<SystemList, Long> {
+	SystemList findByListName(String listName);
 }
